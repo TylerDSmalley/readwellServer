@@ -9,7 +9,7 @@ coverage
 
 # production
 /build
-/config/dev.env
+
 
 # misc
 .DS_Store
