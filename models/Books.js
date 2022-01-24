@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(300),
         },
         rating: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.FLOAT,
             allowNull: false,
             defaultValue: 0,
         }

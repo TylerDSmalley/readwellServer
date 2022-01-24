@@ -4,8 +4,6 @@ const { Users, Books, Reviews } = require("../models");
 const bcrypt = require("bcrypt");
 const { sign } = require('jsonwebtoken');
 const { validateToken } = require("../middlewares/AuthMiddleware");
-const { OAuth2Client } = require("google-auth-library");
-const client = new OAuth2Client("413254531245-7ol21fbdp7k43o4pbdm8k0k3ip2bee07.apps.googleusercontent.com");
 
 
 //ADMIN ROUTES-----------------------------
@@ -41,12 +39,29 @@ router.put("/users/delete/:userId", async (req, res) => {
     res.json(req.body);
 });
 
+//update user 
+router.put("/users/update/:userId", async (req, res) => {
+    await Users.update({
+        firstName : req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email,
+        role: req.body.role,
+    }, { where: {id : req.params.userId} });
+    res.json(req.body);
+});
+
+//get user by id
+router.get("/users/byId/:id", async (req, res) => {
+    const userid = req.params.id;
+    const user = await Users.findByPk(userid);
+    res.json(user);
+});
+
 //BOOKS--------------------------------------
 
 //create book
 router.post("/books/create", async (req, res) => {
 //router.post("/books/create", validateToken, async (req, res) => {
-    console.log(req.body);
     const { title, author, summary, genre, datePublished, publisher, isbn, coverPhoto } = req.body;
     await Books.create({
         title: title,
@@ -68,7 +83,8 @@ router.get("/books/list", async (req, res) => {
 });
 
 //update books
-router.put("books/update/:bookId", async (req, res) => {
+router.put("/books/update/:bookId", async (req, res) => {
+    const bookID = req.params.bookId
     await Books.update({
         title: req.body.title,
         author: req.body.author,
@@ -77,8 +93,7 @@ router.put("books/update/:bookId", async (req, res) => {
         datePublished: req.body.datePublished,
         publisher: req.body.publisher,
         isbn: req.body.isbn,
-        coverPhoto: req.body.coverPhoto,
-    }, { where: {id : req.body.id} });
+    }, { where: {id : bookID} });
     res.json(req.body);
 });
 
@@ -91,7 +106,16 @@ router.delete("/books/delete/:bookId", validateToken, async (req, res) => {
         },
     });
     res.json("BOOK DELETED");
-})
+});
+
+//get book by id
+router.get("/books/byId/:id", async (req, res) => {
+    const bookid = req.params.id;
+    const book = await Books.findByPk(bookid);
+    res.json(book);
+});
+
+
 
 //REVIEWS------------------------------------
 
@@ -102,6 +126,8 @@ router.get("/reviews/list", async (req, res) => {
     });
     res.json(listOfReviews);
 });
+
+
 
 //delete book review
 router.delete("/reviews/delete/:reviewId", validateToken, async (req, res) => {

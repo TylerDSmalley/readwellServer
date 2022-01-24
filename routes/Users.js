@@ -4,13 +4,9 @@ const { Users } = require("../models");
 const bcrypt = require("bcrypt");
 const { sign } = require('jsonwebtoken');
 const { validateToken } = require("../middlewares/AuthMiddleware");
-const { OAuth2Client } = require("google-auth-library");
-const client = new OAuth2Client("413254531245-7ol21fbdp7k43o4pbdm8k0k3ip2bee07.apps.googleusercontent.com");
-
 
 //USER ROUTES-------------------------
 router.post("/", async (req, res) => {
-    console.log(req.body);
     const { firstName, lastName, email, password, isLocal } = req.body;
     bcrypt.hash(password, 10).then((hash) => {
         Users.create({
@@ -21,6 +17,25 @@ router.post("/", async (req, res) => {
             isLocal: isLocal,
         });
         res.json("USER CREATED");
+        const sgMail = require('@sendgrid/mail')
+        sgMail.setApiKey(process.env.SENDGRIDKEY)
+        const msg = {
+            to: req.body.email, // Change to your recipient
+            from: 'itemsfsd01@gmail.com', // Change to your verified sender
+            templateId: 'd-0aaf5f285705465f94305c9cf21a8f9f',
+            dynamicTemplateData: {
+                subject: 'Welcome to ReadWell',
+                firstName: req.body.firstName
+            }
+        };
+        sgMail
+            .send(msg)
+            .then(() => {
+                console.log('Email sent')
+            })
+            .catch((error) => {
+                console.error(error)
+            })
     });
 });
 
@@ -39,7 +54,14 @@ router.post("/login", async (req, res) => {
                 isLocal: "no",
             })
         } else {
-            const currUser = await Users.update({ firstName: req.body.firstName, lastName: req.body.lastName }, { where: { email: email } })
+            const currUser = await Users.update({
+                firstName: req.body.firstName,
+                lastName: req.body.lastName
+            },
+                {
+                    where:
+                        { email: email }
+                })
         }
 
         const user = await Users.findOne({ where: { email: email } });
@@ -57,7 +79,7 @@ router.post("/login", async (req, res) => {
         if (!user) res.json({ error: "User Doesn't Exist" });
 
         bcrypt.compare(password, user.password).then((match) => {
-            if (!match)  {
+            if (!match) {
                 res.json({ error: "Wrong email And Password Combination" });
                 return;
             }
@@ -73,7 +95,6 @@ router.post("/login", async (req, res) => {
 
 router.get("/auth", validateToken, (req, res) => {
     res.json(req.user);
-    console.log(req.user)
 });
 
 router.put("/changepassword", validateToken, async (req, res) => {
@@ -108,19 +129,5 @@ router.delete("/:userId", validateToken, async (req, res) => {
     });
     res.json("USER DELETED");
 });
-
-//Need to look at what values are available in payload..
-//How do you handle create user if user is not in DB without password
-
-//ROUTER FOR PROFILE PAGE/FRIEND SEARCH
-// router.get("/basicinfo/:id", async (req, res) => {
-//     const id = req.params.id;
-
-//     const basicInfo = await Users.findByPk(id, {
-//         attributes: { exclude: ["password"] },
-//     });
-
-//     res.json(basicInfo);
-// });
 
 module.exports = router;
